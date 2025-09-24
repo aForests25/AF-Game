@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcane Forest Dino Style</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
+    }
+    .startScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #a0e6d2;
+      font-size: 50px;
+      background: rgba(10, 30, 30, 0.85);
+      padding: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 0 20px rgba(0, 255, 150, 0.3);
+      border: 1px solid #00b37d;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div class="startScreen" id="startScreen">
+    Enter the Forest
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // =============== Images ===================
+    const ravenImg = new Image();
+    ravenImg.src = "raven.png";
+    const obstacleImg = new Image();
+    obstacleImg.src = "obstacle.png";
+
+    // =============== Sounds ===================
+    const jumpSound = new Audio("jump.wav");
+    const pointSound = new Audio("point.wav");
+    const hitSound = new Audio("hit.wav");
+
+    // =============== Player ===================
+    let ground = canvas.height - 100;
+    let raven = {
+      x: 100,
+      y: ground - 80,
+      width: 80,
+      height: 80,
+      gravity: 0.8,
+      lift: -15,
+      velocity: 0,
+      jumping: false
+    };
+
+    // =============== Obstacles ===================
+    let obstacles = [];
+    let frame = 0;
+    let score = 0;
+    let gameOver = false;
+    let baseSpeed = 6;
+    let speedMultiplier = 1;
+
+    // =============== Smoke ===================
+    let smokeParticles = [];
+    function addSmoke(x, y) {
+      smokeParticles.push({
+        x: x,
+        y: y,
+        radius: 5,
+        alpha: 1,
+        rise: 0.5 + Math.random() * 0.5,
+        shrink: 0.05 + Math.random() * 0.02
+      });
+    }
+    function drawSmoke() {
+      for (let i = smokeParticles.length - 1; i >= 0; i--) {
+        const p = smokeParticles[i];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160, 230, 210, ${p.alpha})`;
+        ctx.fill();
+        ctx.closePath();
+        p.y -= p.rise;
+        p.radius -= p.shrink;
+        p.alpha -= 0.02;
+        if (p.radius <= 0 || p.alpha <= 0) smokeParticles.splice(i, 1);
+      }
+    }
+
+    // =============== Controls ===================
+    function jump() {
+      if (!gameOver && !raven.jumping) {
+        raven.velocity = raven.lift;
+        raven.jumping = true;
+        jumpSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+        for (let i = 0; i < 3; i++) addSmoke(raven.x + raven.width - 10 + i * 2, raven.y + 20 + i * 2);
+      }
+      if (gameOver) restartGame();
+    }
+    window.addEventListener("keydown", e => {
+      if (e.code === "Space") jump();
+    });
+    window.addEventListener("touchstart", jump);
+
+    // =============== Sky Objects ===================
+    let skyObjects = [];
+
+    function addSkyObject() {
+      const type = Math.random() < 0.4 ? "comet" : Math.random() < 0.7 ? "probe" : "ufo";
+      const x = Math.random() < 0.5 ? -50 : canvas.width + 50;
+      const y = Math.random() * canvas.height / 2;
+      const speed = 2 + Math.random() * 4;
+      const direction = x < 0 ? 1 : -1; // směr pohybu
+
+      skyObjects.push({
+        x: x,
+        y: y,
+        type: type,
+        speed: speed,
+        direction: direction,
+        size: 5 + Math.random() * 10
+      });
+    }
+
+    function drawSkyObjects() {
+      skyObjects.forEach(obj => {
+        if (obj.type === "comet") {
+          // Kreslení komety (s ocasem)
+          ctx.beginPath();
+          ctx.arc(obj.x, obj.y, obj.size / 2, 0, Math.PI * 2);
+          ctx.fillStyle = "#a0e6d2";
+          ctx.fill();
+
+          // Ocas komety
+          ctx.beginPath();
+          ctx.moveTo(obj.x, obj.y);
+          ctx.lineTo(obj.x - 10 * obj.direction, obj.y - 5);
+          ctx.lineTo(obj.x - 20 * obj.direction, obj.y);
+          ctx.lineTo(obj.x - 10 * obj.direction, obj.y + 5);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(160, 230, 210, 0.3)";
+          ctx.fill();
+        } else if (obj.type === "probe") {
+          // Sonda: malý čtvereček
+          ctx.fillStyle = "#555";
+          ctx.fillRect(obj.x - obj.size / 2, obj.y - obj.size / 2, obj.size, obj.size);
+        } else if (obj.type === "ufo") {
+          // UFO: elipsa s okénkem
+          ctx.beginPath();
+          ctx.ellipse(obj.x, obj.y, obj.size, obj.size / 2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "#33ccff";
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(obj.x, obj.y - obj.size / 3, obj.size / 3, 0, Math.PI * 2);
+          ctx.fillStyle = "#a0e6d2";
+          ctx.fill();
+        }
+      });
+    }
+
+    function updateSkyObjects() {
+      for (let i = skyObjects.length - 1; i >= 0; i--) {
+        const obj = skyObjects[i];
+        obj.x += obj.speed * obj.direction;
+
+        // Odstraníme objekt, když opustí obrazovku
+        if ((obj.direction === 1 && obj.x > canvas.width + 50) || (obj.direction === -1 && obj.x < -50)) {
+          skyObjects.splice(i, 1);
+        }
+      }
+
+      // Náhodně přidáváme objekty
+      if (Math.random() < 0.01) {
+        addSkyObject();
+      }
+    }
+
+    // =============== Background ===================
+    let stars = [];
+    for (let i = 0; i < 100; i++) stars.push({x: Math.random() * canvas.width, y: Math.random() * canvas.height / 2, radius: Math.random() * 2, alpha: Math.random()});
+
+    let clouds = [];
+    for (let i = 0; i < 10; i++) clouds.push({x: Math.random() * canvas.width, y: 50 + Math.random() * 100, width: 100 + Math.random() * 50, height: 50 + Math.random() * 30, speed: baseSpeed * 0.5});
+
+    let trees = [];
+    let treeCount = 15;
+    for (let i = 0; i < treeCount; i++) {
+      let treeWidth = 20 + Math.random() * 40;
+      let treeHeight = 80 + Math.random() * 120;
+      let treeX = Math.random() * canvas.width;
+      let treeSpeed = baseSpeed * 0.7 + Math.random() * 0.5;
+      trees.push({x: treeX, y: ground, width: treeWidth, height: treeHeight, speed: treeSpeed});
+    }
+
+    function drawBackground() {
+      // tmavě zelené pozadí
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#0a2a2a");
+      gradient.addColorStop(1, "#0a1a1a");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // hvězdy
+      stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160, 230, 210, ${s.alpha})`;
+        ctx.fill();
+        ctx.closePath();
+        s.x -= baseSpeed * 0.2;
+        if (s.x < 0) s.x = canvas.width;
+      });
+
+      // mraky
+      clouds.forEach(c => {
+        ctx.fillStyle = "rgba(160, 230, 210, 0.2)";
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, c.width, c.height, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+        c.x -= c.speed;
+        if (c.x + c.width < 0) c.x = canvas.width + c.width;
+      });
+
+      // stromy
+      trees.forEach(t => {
+        ctx.fillStyle = "#023a2a";
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        ctx.lineTo(t.x + t.width, t.y);
+        ctx.lineTo(t.x + t.width / 2, t.y - t.height);
+        ctx.closePath();
+        ctx.fill();
+        t.x -= t.speed;
+        if (t.x + t.width < 0) t.x = canvas.width;
+      });
+
+      // kaligrafický nápis přes pozadí
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.font = "bold 80px 'Brush Script MT', cursive";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Arcane Forest", canvas.width / 2, canvas.height / 2.5);
+    }
+
+    // =============== Draw Functions ===================
+    function drawRaven() {
+      if (ravenImg.complete && ravenImg.naturalWidth !== 0) {
+        ctx.drawImage(ravenImg, raven.x, raven.y, raven.width, raven.height);
+      } else {
+        ctx.fillStyle = "#00b37d";
+        ctx.beginPath();
+        ctx.arc(raven.x + raven.width/2, raven.y + raven.height/2, raven.width/2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawObstacles() {
+      obstacles.forEach(obs => {
+        if (obs.type === "pit") {
+          ctx.fillStyle = "#000";
+          ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        } else {
+          if (obstacleImg.complete && obstacleImg.naturalWidth !== 0) {
+            ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height);
+          } else {
+            ctx.fillStyle = "#006644";
+            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+          }
+        }
+      });
+    }
+
+    function updateObstacles() {
+      speedMultiplier = 1 + Math.floor(score / 100) * 0.1;
+      if (frame % 120 === 0) {
+        let createPit = Math.random() < 0.5;
+        if (createPit) {
+          obstacles.push({
+            x: canvas.width,
+            y: ground,
+            width: 80 + Math.random() * 40,
+            height: 10,
+            type: "pit",
+            passed: false
+          });
+        } else {
+          obstacles.push({
+            x: canvas.width,
+            y: ground - 80,
+            width: 40,
+            height: 80,
+            passed: false,
+            type: "block"
+          });
+        }
+      }
+      obstacles.forEach(obs => {
+        obs.x -= baseSpeed * speedMultiplier;
+      });
+    }
+
+    function updateRaven() {
+      raven.velocity += raven.gravity;
+      raven.y += raven.velocity;
+      if (raven.y + raven.height >= ground) {
+        raven.y = ground - raven.height;
+        raven.velocity = 0;
+        raven.jumping = false;
+      }
+    }
+
+    function checkCollisions() {
+      for (let obs of obstacles) {
+        if (obs.type === "pit") {
+          if (
+            raven.x + raven.width > obs.x &&
+            raven.x < obs.x + obs.width &&
+            raven.y + raven.height >= obs.y &&
+            !raven.jumping
+          ) {
+            gameOver = true;
+            hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+          }
+        } else {
+          if (
+            raven.x < obs.x + obs.width &&
+            raven.x + raven.width > obs.x &&
+            raven.y < obs.y + obs.height &&
+            raven.y + raven.height > obs.y
+          ) {
+            gameOver = true;
+            hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+          }
+        }
+        if (!obs.passed && obs.x + obs.width < raven.x) {
+          obs.passed = true;
+          score++;
+          pointSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+        }
+      }
+    }
+
+    function drawScore() {
+      ctx.fillStyle = "#a0e6d2";
+      ctx.font = "40px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText(score, canvas.width / 2, 60);
+    }
+
+    function drawGround() {
+      ctx.fillStyle = "#004d3a";
+      ctx.fillRect(0, ground, canvas.width, 10);
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      updateSkyObjects();
+      drawSkyObjects();
+
+      if (!gameOver) {
+        updateRaven();
+        updateObstacles();
+        checkCollisions();
+        drawGround();
+        drawObstacles();
+        drawRaven();
+        if (frame % 5 === 0) addSmoke(raven.x + raven.width - 10, raven.y + 20);
+        drawSmoke();
+        drawScore();
+        frame++;
+        requestAnimationFrame(loop);
+      } else {
+        ctx.fillStyle = "#ff3366";
+        ctx.font = "60px Arial Black";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = "#a0e6d2";
+        ctx.fillText("Skóre: " + score, canvas.width / 2, canvas.height / 2 + 80);
+        ctx.font = "30px Arial";
+        ctx.fillText("Stiskni mezerník nebo tapni pro restart", canvas.width / 2, canvas.height / 2 + 130);
+      }
+    }
+
+    function restartGame() {
+      obstacles = [];
+      frame = 0;
+      score = 0;
+      speedMultiplier = 1;
+      gameOver = false;
+      raven.y = ground - raven.height;
+      raven.velocity = 0;
+      loop();
+    }
+
+    // =============== Start Game ===================
+    document.getElementById("startScreen").addEventListener("click", () => {
+      document.getElementById("startScreen").style.display = "none";
+      loop();
+    });
+
+    // Pokud chceš, můžeš přidat logování pro ladění:
+    ravenImg.onerror = () => console.log("Chyba: raven.png nenalezen");
+    obstacleImg.onerror = () => console.log("Chyba: obstacle.png nenalezen");
+  </script>
+</body>
+</html>
