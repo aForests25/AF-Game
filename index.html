@@ -128,7 +128,7 @@
       const x = Math.random() < 0.5 ? -50 : canvas.width + 50;
       const y = Math.random() * canvas.height / 2;
       const speed = 2 + Math.random() * 4;
-      const direction = x < 0 ? 1 : -1; // směr pohybu
+      const direction = x < 0 ? 1 : -1;
 
       skyObjects.push({
         x: x,
@@ -143,13 +143,11 @@
     function drawSkyObjects() {
       skyObjects.forEach(obj => {
         if (obj.type === "comet") {
-          // Kreslení komety (s ocasem)
           ctx.beginPath();
           ctx.arc(obj.x, obj.y, obj.size / 2, 0, Math.PI * 2);
           ctx.fillStyle = "#a0e6d2";
           ctx.fill();
 
-          // Ocas komety
           ctx.beginPath();
           ctx.moveTo(obj.x, obj.y);
           ctx.lineTo(obj.x - 10 * obj.direction, obj.y - 5);
@@ -159,11 +157,9 @@
           ctx.fillStyle = "rgba(160, 230, 210, 0.3)";
           ctx.fill();
         } else if (obj.type === "probe") {
-          // Sonda: malý čtvereček
           ctx.fillStyle = "#555";
           ctx.fillRect(obj.x - obj.size / 2, obj.y - obj.size / 2, obj.size, obj.size);
         } else if (obj.type === "ufo") {
-          // UFO: elipsa s okénkem
           ctx.beginPath();
           ctx.ellipse(obj.x, obj.y, obj.size, obj.size / 2, 0, 0, Math.PI * 2);
           ctx.fillStyle = "#33ccff";
@@ -182,13 +178,11 @@
         const obj = skyObjects[i];
         obj.x += obj.speed * obj.direction;
 
-        // Odstraníme objekt, když opustí obrazovku
         if ((obj.direction === 1 && obj.x > canvas.width + 50) || (obj.direction === -1 && obj.x < -50)) {
           skyObjects.splice(i, 1);
         }
       }
 
-      // Náhodně přidáváme objekty
       if (Math.random() < 0.01) {
         addSkyObject();
       }
@@ -212,14 +206,12 @@
     }
 
     function drawBackground() {
-      // tmavě zelené pozadí
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#0a2a2a");
       gradient.addColorStop(1, "#0a1a1a");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // hvězdy
       stars.forEach(s => {
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
@@ -230,7 +222,6 @@
         if (s.x < 0) s.x = canvas.width;
       });
 
-      // mraky
       clouds.forEach(c => {
         ctx.fillStyle = "rgba(160, 230, 210, 0.2)";
         ctx.beginPath();
@@ -241,7 +232,6 @@
         if (c.x + c.width < 0) c.x = canvas.width + c.width;
       });
 
-      // stromy
       trees.forEach(t => {
         ctx.fillStyle = "#023a2a";
         ctx.beginPath();
@@ -254,7 +244,6 @@
         if (t.x + t.width < 0) t.x = canvas.width;
       });
 
-      // kaligrafický nápis přes pozadí
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "bold 80px 'Brush Script MT', cursive";
       ctx.textAlign = "center";
@@ -419,7 +408,7 @@
       loop();
     });
 
-    // Pokud chceš, můžeš přidat logování pro ladění:
+    // Ladění: zkontroluj, zda jsou obrázky načteny
     ravenImg.onerror = () => console.log("Chyba: raven.png nenalezen");
     obstacleImg.onerror = () => console.log("Chyba: obstacle.png nenalezen");
   </script>
