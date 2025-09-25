@@ -61,7 +61,6 @@
     // Proměnné pro zimní level
     let winterMode = false;
     let pitCounter = 0; // počet po sobě jdoucích propastí
-    let specialPit = null; // ID 3. propasti, která otevírá cestu dolů
     let fallingDown = false; // zda právě padá dolů
     let fallSpeed = 0; // rychlost pádu dolů
     let fallFrame = 0; // počet snímků pádu
@@ -352,14 +351,11 @@
             width: 80 + Math.random() * 40,
             height: 10,
             type: "pit",
-            passed: false
+            passed: false,
+            special: pitCounter === 2 // Třetí propast je speciální
           };
           obstacles.push(newPit);
           pitCounter++;
-          // Pokud je to 3. propast v řadě
-          if (pitCounter === 3) {
-            specialPit = newPit;
-          }
         } else {
           obstacles.push({
             x: canvas.width,
@@ -387,7 +383,6 @@
           winterMode = true;
           fallingDown = false;
           pitCounter = 0;
-          specialPit = null;
           fallFrame = 0;
           // Reset pozice ravenu
           raven.y = ground - 80;
@@ -413,13 +408,12 @@
             !raven.jumping
           ) {
             // Pokud je to speciální 3. propast
-            if (obs === specialPit && !fallingDown) {
+            if (obs.special && !fallingDown) {
               fallingDown = true;
               fallSpeed = 5; // začne padat dolů
-              specialPit = null;
               pitCounter = 0;
               return;
-            } else if (obs !== specialPit) {
+            } else if (!obs.special) {
               // Jinak zabije hru
               gameOver = true;
               hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
@@ -495,7 +489,6 @@
       winterMode = false;
       pitCounter = 0;
       fallingDown = false;
-      specialPit = null;
       fallFrame = 0;
       raven.y = ground - raven.height;
       raven.velocity = 0;
