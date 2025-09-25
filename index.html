@@ -11,8 +11,8 @@
       overflow: hidden;
       font-family: 'Arial', sans-serif;
       touch-action: manipulation; /* zabrání zoomu při dotyku */
-      -webkit-touch-callout: none; /* iOS */
-      -webkit-user-select: none; /* iOS */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
       -khtml-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
@@ -24,7 +24,6 @@
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
       width: 100vw;
       height: 100vh;
-      image-rendering: pixelated; /* pokud chceš pixel art styl */
     }
     .startScreen {
       position: absolute;
@@ -54,6 +53,7 @@
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const startScreen = document.getElementById("startScreen");
 
     // Přizpůsobení velikosti displeje
     function resizeCanvas() {
@@ -62,6 +62,7 @@
     }
 
     window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("load", resizeCanvas);
     resizeCanvas();
 
     // =============== Images (z GitHub Pages) ===================
@@ -141,7 +142,10 @@
     window.addEventListener("keydown", e => {
       if (e.code === "Space") jump();
     });
-    window.addEventListener("touchstart", jump);
+    window.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // zabrání zoomu
+      jump();
+    });
 
     // =============== Sky Objects ===================
     let skyObjects = [];
@@ -426,8 +430,8 @@
     }
 
     // =============== Start Game ===================
-    document.getElementById("startScreen").addEventListener("click", () => {
-      document.getElementById("startScreen").style.display = "none";
+    startScreen.addEventListener("click", () => {
+      startScreen.style.display = "none";
       loop();
     });
 
