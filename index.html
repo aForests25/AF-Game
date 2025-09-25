@@ -427,18 +427,12 @@
     }
 
     function checkCollisions() {
-      // MENŠÍ HITBOX PRO RAVENA
-      let ravenHitboxWidth = raven.width * 0.8; // 80 % šířky
-      let ravenHitboxHeight = raven.height * 0.8; // 80 % výšky
-      let ravenHitboxX = raven.x + (raven.width - ravenHitboxWidth) / 2;
-      let ravenHitboxY = raven.y + (raven.height - ravenHitboxHeight) / 2;
-
       for (let obs of obstacles) {
         if (obs.type === "pit") {
           if (
-            ravenHitboxX + ravenHitboxWidth > obs.x &&
-            ravenHitboxX < obs.x + obs.width &&
-            ravenHitboxY + ravenHitboxHeight >= obs.y &&
+            raven.x + raven.width > obs.x &&
+            raven.x < obs.x + obs.width &&
+            raven.y + raven.height >= obs.y &&
             !raven.jumping
           ) {
             // Pokud je to speciální 3. propast
@@ -472,10 +466,10 @@
           let hitboxX = obs.x + (obs.width - hitboxWidth) / 2; // střed
 
           if (
-            ravenHitboxX + ravenHitboxWidth > hitboxX &&
-            ravenHitboxX < hitboxX + hitboxWidth &&
-            ravenHitboxY < obs.y + obs.height &&
-            ravenHitboxY + ravenHitboxHeight > obs.y
+            raven.x + raven.width > hitboxX &&
+            raven.x < hitboxX + hitboxWidth &&
+            raven.y < obs.y + obs.height &&
+            raven.y + raven.height > obs.y
           ) {
             gameOver = true;
             hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
