@@ -376,6 +376,7 @@
           };
           obstacles.push(newPit);
           pitCounter++;
+          console.log("Vytvořena propast. Počítadlo: " + pitCounter + ", Speciální: " + newPit.special);
         } else {
           obstacles.push({
             x: canvas.width,
@@ -386,6 +387,7 @@
             type: "block"
           });
           pitCounter = 0; // Resetujeme počítadlo
+          console.log("Vytvořen blok. Počítadlo resetováno na: " + pitCounter);
         }
       }
       obstacles.forEach(obs => {
@@ -433,14 +435,17 @@
             ravenHitboxY + ravenHitboxHeight >= obs.y &&
             !raven.jumping
           ) {
+            console.log("Kolize s propastí. Speciální: " + obs.special);
             // Pokud je to speciální 3. propast
             if (obs.special && !fallingDown) {
+              console.log("Spouštím pád dolů do zimy!");
               fallingDown = true;
               fallSpeed = 5; // začne padat dolů
               pitCounter = 0;
               return;
             } else if (!obs.special) {
               // Jinak zabije hru
+              console.log("Propast zabila hráče.");
               gameOver = true;
               hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
             }
