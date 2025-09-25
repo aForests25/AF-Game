@@ -58,6 +58,11 @@
     // Proměnné, které se přepočítají podle velikosti
     let ground, raven, baseSpeed, obstacles, skyObjects, stars, clouds, trees, smokeParticles;
 
+    // Proměnné pro zimní level
+    let winterMode = false;
+    let pitCounter = 0; // počet po sobě jdoucích propastí
+    let pitSequence = 0; // počet propastí v řadě
+
     // Přizpůsobení velikosti displeje
     function resizeGame() {
       canvas.width = window.innerWidth;
@@ -234,24 +239,45 @@
 
     // =============== Background ===================
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#0a2a2a");
-      gradient.addColorStop(1, "#0a1a1a");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (winterMode) {
+        // Zimní pozadí
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, "#a0c8e0");
+        gradient.addColorStop(1, "#d0e6f0");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      stars.forEach(s => {
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(160, 230, 210, ${s.alpha})`;
-        ctx.fill();
-        ctx.closePath();
-        s.x -= baseSpeed * 0.2;
-        if (s.x < 0) s.x = canvas.width;
-      });
+        // Sněhové hvězdičky
+        stars.forEach(s => {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+          ctx.fill();
+          ctx.closePath();
+          s.x -= baseSpeed * 0.2;
+          if (s.x < 0) s.x = canvas.width;
+        });
+      } else {
+        // Normální pozadí
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, "#0a2a2a");
+        gradient.addColorStop(1, "#0a1a1a");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        stars.forEach(s => {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(160, 230, 210, ${s.alpha})`;
+          ctx.fill();
+          ctx.closePath();
+          s.x -= baseSpeed * 0.2;
+          if (s.x < 0) s.x = canvas.width;
+        });
+      }
 
       clouds.forEach(c => {
-        ctx.fillStyle = "rgba(160, 230, 210, 0.2)";
+        ctx.fillStyle = winterMode ? "rgba(255, 255, 255, 0.5)" : "rgba(160, 230, 210, 0.2)";
         ctx.beginPath();
         ctx.ellipse(c.x, c.y, c.width, c.height, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -261,7 +287,11 @@
       });
 
       trees.forEach(t => {
-        ctx.fillStyle = "#023a2a";
+        if (winterMode) {
+          ctx.fillStyle = "#a0c8e0";
+        } else {
+          ctx.fillStyle = "#023a2a";
+        }
         ctx.beginPath();
         ctx.moveTo(t.x, t.y);
         ctx.lineTo(t.x + t.width, t.y);
@@ -272,7 +302,7 @@
         if (t.x + t.width < 0) t.x = canvas.width;
       });
 
-      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.fillStyle = winterMode ? "rgba(200, 200, 200, 0.6)" : "rgba(0, 0, 0, 0.6)";
       ctx.font = "bold 80px 'Brush Script MT', cursive";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -284,7 +314,7 @@
       if (ravenImg.complete && ravenImg.naturalWidth !== 0) {
         ctx.drawImage(ravenImg, raven.x, raven.y, raven.width, raven.height);
       } else {
-        ctx.fillStyle = "#00b37d";
+        ctx.fillStyle = winterMode ? "#88ccee" : "#00b37d";
         ctx.beginPath();
         ctx.arc(raven.x + raven.width/2, raven.y + raven.height/2, raven.width/2, 0, Math.PI * 2);
         ctx.fill();
@@ -294,13 +324,13 @@
     function drawObstacles() {
       obstacles.forEach(obs => {
         if (obs.type === "pit") {
-          ctx.fillStyle = "#000";
+          ctx.fillStyle = winterMode ? "#000066" : "#000";
           ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         } else {
           if (obstacleImg.complete && obstacleImg.naturalWidth !== 0) {
             ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height);
           } else {
-            ctx.fillStyle = "#006644";
+            ctx.fillStyle = winterMode ? "#66aaff" : "#006644";
             ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
           }
         }
@@ -320,6 +350,7 @@
             type: "pit",
             passed: false
           });
+          pitCounter++;
         } else {
           obstacles.push({
             x: canvas.width,
@@ -329,6 +360,14 @@
             passed: false,
             type: "block"
           });
+          pitCounter = 0;
+        }
+
+        // Pokud jsou 3 propasti za sebou
+        if (pitCounter >= 3) {
+          winterMode = true;
+          pitCounter = 0; // resetujeme
+          // Můžeme přidat zvuk nebo efekt
         }
       }
       obstacles.forEach(obs => {
@@ -378,14 +417,14 @@
     }
 
     function drawScore() {
-      ctx.fillStyle = "#a0e6d2";
+      ctx.fillStyle = winterMode ? "#003366" : "#a0e6d2";
       ctx.font = "40px Arial Black";
       ctx.textAlign = "center";
       ctx.fillText(score, canvas.width / 2, 60);
     }
 
     function drawGround() {
-      ctx.fillStyle = "#004d3a";
+      ctx.fillStyle = winterMode ? "#a0c8e0" : "#004d3a";
       ctx.fillRect(0, ground, canvas.width, 10);
     }
 
@@ -412,7 +451,7 @@
         ctx.font = "60px Arial Black";
         ctx.textAlign = "center";
         ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-        ctx.fillStyle = "#a0e6d2";
+        ctx.fillStyle = winterMode ? "#003366" : "#a0e6d2";
         ctx.fillText("Skóre: " + score, canvas.width / 2, canvas.height / 2 + 80);
         ctx.font = "30px Arial";
         ctx.fillText("Stiskni mezerník nebo tapni pro restart", canvas.width / 2, canvas.height / 2 + 130);
@@ -425,6 +464,8 @@
       score = 0;
       speedMultiplier = 1;
       gameOver = false;
+      winterMode = false;
+      pitCounter = 0;
       raven.y = ground - raven.height;
       raven.velocity = 0;
       loop();
