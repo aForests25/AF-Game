@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Arcane Forest Dino Style</title>
   <style>
     body {
@@ -10,10 +10,11 @@
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
       overflow: hidden;
       font-family: 'Arial', sans-serif;
+      touch-action: manipulation;
     }
     canvas {
       display: block;
-      margin: auto;
+      margin: 0 auto;
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
     }
     .startScreen {
@@ -23,9 +24,9 @@
       transform: translate(-50%, -50%);
       text-align: center;
       color: #a0e6d2;
-      font-size: 50px;
+      font-size: clamp(20px, 5vw, 40px);
       background: rgba(10, 30, 30, 0.85);
-      padding: 20px;
+      padding: 15px 30px;
       border-radius: 10px;
       cursor: pointer;
       user-select: none;
@@ -43,14 +44,26 @@
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+    // Přizpůsobení velikosti displeje
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
     // =============== Images ===================
     const ravenImg = new Image();
-    ravenImg.src = "raven.png";
+    ravenImg.src = "https://i.imgur.com/7KJ8LqH.png";
+    ravenImg.onload = () => console.log("✅ Raven obrázek načten");
+    ravenImg.onerror = () => console.log("❌ Chyba: raven.png nenalezen");
+
     const obstacleImg = new Image();
-    obstacleImg.src = "obstacle.png";
+    obstacleImg.src = "https://i.imgur.com/5GQY9fN.png";
+    obstacleImg.onload = () => console.log("✅ Obstacle obrázek načten");
+    obstacleImg.onerror = () => console.log("❌ Chyba: obstacle.png nenalezen");
 
     // =============== Sounds ===================
     const jumpSound = new Audio("jump.wav");
@@ -295,9 +308,9 @@
         } else {
           obstacles.push({
             x: canvas.width,
-            y: ground - 80,
+            y: ground - 50, // ✅ Níže (dříve bylo -80)
             width: 40,
-            height: 80,
+            height: 80, // stejná výška
             passed: false,
             type: "block"
           });
