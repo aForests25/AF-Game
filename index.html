@@ -10,7 +10,7 @@
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
       overflow: hidden;
       font-family: 'Arial', sans-serif;
-      touch-action: manipulation; /* zabrání zoomu při dotyku */
+      touch-action: manipulation;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       -khtml-user-select: none;
@@ -55,15 +55,50 @@
     const ctx = canvas.getContext("2d");
     const startScreen = document.getElementById("startScreen");
 
+    // Proměnné, které se přepočítají podle velikosti
+    let ground, raven, baseSpeed, obstacles, skyObjects, stars, clouds, trees, smokeParticles;
+
     // Přizpůsobení velikosti displeje
-    function resizeCanvas() {
+    function resizeGame() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+
+      // Přepočet proměnných podle velikosti
+      ground = canvas.height - 100;
+      raven = {
+        x: 100,
+        y: ground - 80,
+        width: 80,
+        height: 80,
+        gravity: 0.8,
+        lift: -15,
+        velocity: 0,
+        jumping: false
+      };
+
+      baseSpeed = 6;
+      obstacles = [];
+      skyObjects = [];
+      stars = [];
+      clouds = [];
+      trees = [];
+      smokeParticles = [];
+
+      // Reset pozadí
+      for (let i = 0; i < 100; i++) stars.push({x: Math.random() * canvas.width, y: Math.random() * canvas.height / 2, radius: Math.random() * 2, alpha: Math.random()});
+      for (let i = 0; i < 10; i++) clouds.push({x: Math.random() * canvas.width, y: 50 + Math.random() * 100, width: 100 + Math.random() * 50, height: 50 + Math.random() * 30, speed: baseSpeed * 0.5});
+      for (let i = 0; i < 15; i++) {
+        let treeWidth = 20 + Math.random() * 40;
+        let treeHeight = 80 + Math.random() * 120;
+        let treeX = Math.random() * canvas.width;
+        let treeSpeed = baseSpeed * 0.7 + Math.random() * 0.5;
+        trees.push({x: treeX, y: ground, width: treeWidth, height: treeHeight, speed: treeSpeed});
+      }
     }
 
-    window.addEventListener("resize", resizeCanvas);
-    window.addEventListener("load", resizeCanvas);
-    resizeCanvas();
+    window.addEventListener("resize", resizeGame);
+    window.addEventListener("load", resizeGame);
+    resizeGame();
 
     // =============== Images (z GitHub Pages) ===================
     const ravenImg = new Image();
@@ -81,29 +116,13 @@
     const pointSound = new Audio("point.wav");
     const hitSound = new Audio("hit.wav");
 
-    // =============== Player ===================
-    let ground = canvas.height - 100;
-    let raven = {
-      x: 100,
-      y: ground - 80,
-      width: 80,
-      height: 80,
-      gravity: 0.8,
-      lift: -15,
-      velocity: 0,
-      jumping: false
-    };
-
     // =============== Obstacles ===================
-    let obstacles = [];
     let frame = 0;
     let score = 0;
     let gameOver = false;
-    let baseSpeed = 6;
     let speedMultiplier = 1;
 
     // =============== Smoke ===================
-    let smokeParticles = [];
     function addSmoke(x, y) {
       smokeParticles.push({
         x: x,
@@ -143,13 +162,11 @@
       if (e.code === "Space") jump();
     });
     window.addEventListener("touchstart", (e) => {
-      e.preventDefault(); // zabrání zoomu
+      e.preventDefault();
       jump();
     });
 
     // =============== Sky Objects ===================
-    let skyObjects = [];
-
     function addSkyObject() {
       const type = Math.random() < 0.4 ? "comet" : Math.random() < 0.7 ? "probe" : "ufo";
       const x = Math.random() < 0.5 ? -50 : canvas.width + 50;
@@ -216,22 +233,6 @@
     }
 
     // =============== Background ===================
-    let stars = [];
-    for (let i = 0; i < 100; i++) stars.push({x: Math.random() * canvas.width, y: Math.random() * canvas.height / 2, radius: Math.random() * 2, alpha: Math.random()});
-
-    let clouds = [];
-    for (let i = 0; i < 10; i++) clouds.push({x: Math.random() * canvas.width, y: 50 + Math.random() * 100, width: 100 + Math.random() * 50, height: 50 + Math.random() * 30, speed: baseSpeed * 0.5});
-
-    let trees = [];
-    let treeCount = 15;
-    for (let i = 0; i < treeCount; i++) {
-      let treeWidth = 20 + Math.random() * 40;
-      let treeHeight = 80 + Math.random() * 120;
-      let treeX = Math.random() * canvas.width;
-      let treeSpeed = baseSpeed * 0.7 + Math.random() * 0.5;
-      trees.push({x: treeX, y: ground, width: treeWidth, height: treeHeight, speed: treeSpeed});
-    }
-
     function drawBackground() {
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#0a2a2a");
@@ -435,7 +436,7 @@
       loop();
     });
 
-    // Ladění: zkontroluj, zda jsou obrázky načteny
+    // Ladění
     ravenImg.onerror = () => console.log("Chyba: raven.png nenalezen");
     obstacleImg.onerror = () => console.log("Chyba: obstacle.png nenalezen");
   </script>
