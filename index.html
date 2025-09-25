@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Arcane Forest Dino Style</title>
   <style>
     body {
@@ -10,12 +10,21 @@
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
       overflow: hidden;
       font-family: 'Arial', sans-serif;
-      touch-action: manipulation;
+      touch-action: manipulation; /* zabrání zoomu při dotyku */
+      -webkit-touch-callout: none; /* iOS */
+      -webkit-user-select: none; /* iOS */
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
     canvas {
       display: block;
       margin: 0 auto;
       background: linear-gradient(to bottom, #0a2a2a, #0a1a1a);
+      width: 100vw;
+      height: 100vh;
+      image-rendering: pixelated; /* pokud chceš pixel art styl */
     }
     .startScreen {
       position: absolute;
@@ -32,6 +41,7 @@
       user-select: none;
       box-shadow: 0 0 20px rgba(0, 255, 150, 0.3);
       border: 1px solid #00b37d;
+      z-index: 1000;
     }
   </style>
 </head>
@@ -56,12 +66,12 @@
 
     // =============== Images (z GitHub Pages) ===================
     const ravenImg = new Image();
-    ravenImg.src = "https://aforests25.github.io/AF-Game/raven.png"; // ✅ Tvoje URL
+    ravenImg.src = "https://aforests25.github.io/AF-Game/raven.png";
     ravenImg.onload = () => console.log("✅ Raven obrázek načten");
     ravenImg.onerror = () => console.log("❌ Chyba: Raven obrázek nenalezen");
 
     const obstacleImg = new Image();
-    obstacleImg.src = "https://aforests25.github.io/AF-Game/obstacle.png"; // ✅ Tvoje URL
+    obstacleImg.src = "https://aforests25.github.io/AF-Game/obstacle.png";
     obstacleImg.onload = () => console.log("✅ Obstacle obrázek načten");
     obstacleImg.onerror = () => console.log("❌ Chyba: Obstacle obrázek nenalezen");
 
@@ -269,7 +279,6 @@
       if (ravenImg.complete && ravenImg.naturalWidth !== 0) {
         ctx.drawImage(ravenImg, raven.x, raven.y, raven.width, raven.height);
       } else {
-        // Fallback: zelený kruh
         ctx.fillStyle = "#00b37d";
         ctx.beginPath();
         ctx.arc(raven.x + raven.width/2, raven.y + raven.height/2, raven.width/2, 0, Math.PI * 2);
@@ -286,7 +295,6 @@
           if (obstacleImg.complete && obstacleImg.naturalWidth !== 0) {
             ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height);
           } else {
-            // Fallback: zelený obdélník
             ctx.fillStyle = "#006644";
             ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
           }
@@ -310,7 +318,7 @@
         } else {
           obstacles.push({
             x: canvas.width,
-            y: ground - 50, // ✅ Níže (dříve bylo -80)
+            y: ground - 50,
             width: 40,
             height: 80,
             passed: false,
@@ -422,6 +430,10 @@
       document.getElementById("startScreen").style.display = "none";
       loop();
     });
+
+    // Ladění: zkontroluj, zda jsou obrázky načteny
+    ravenImg.onerror = () => console.log("Chyba: raven.png nenalezen");
+    obstacleImg.onerror = () => console.log("Chyba: obstacle.png nenalezen");
   </script>
 </body>
 </html>
