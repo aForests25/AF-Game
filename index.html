@@ -54,16 +54,16 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    // =============== Images ===================
+    // =============== Images (z GitHub Pages) ===================
     const ravenImg = new Image();
-    ravenImg.src = "https://i.imgur.com/7KJ8LqH.png";
+    ravenImg.src = "https://aforests25.github.io/AF-Game/raven.png"; // ✅ Tvoje URL
     ravenImg.onload = () => console.log("✅ Raven obrázek načten");
-    ravenImg.onerror = () => console.log("❌ Chyba: raven.png nenalezen");
+    ravenImg.onerror = () => console.log("❌ Chyba: Raven obrázek nenalezen");
 
     const obstacleImg = new Image();
-    obstacleImg.src = "https://i.imgur.com/5GQY9fN.png";
+    obstacleImg.src = "https://aforests25.github.io/AF-Game/obstacle.png"; // ✅ Tvoje URL
     obstacleImg.onload = () => console.log("✅ Obstacle obrázek načten");
-    obstacleImg.onerror = () => console.log("❌ Chyba: obstacle.png nenalezen");
+    obstacleImg.onerror = () => console.log("❌ Chyba: Obstacle obrázek nenalezen");
 
     // =============== Sounds ===================
     const jumpSound = new Audio("jump.wav");
@@ -269,6 +269,7 @@
       if (ravenImg.complete && ravenImg.naturalWidth !== 0) {
         ctx.drawImage(ravenImg, raven.x, raven.y, raven.width, raven.height);
       } else {
+        // Fallback: zelený kruh
         ctx.fillStyle = "#00b37d";
         ctx.beginPath();
         ctx.arc(raven.x + raven.width/2, raven.y + raven.height/2, raven.width/2, 0, Math.PI * 2);
@@ -285,6 +286,7 @@
           if (obstacleImg.complete && obstacleImg.naturalWidth !== 0) {
             ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height);
           } else {
+            // Fallback: zelený obdélník
             ctx.fillStyle = "#006644";
             ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
           }
@@ -310,7 +312,7 @@
             x: canvas.width,
             y: ground - 50, // ✅ Níže (dříve bylo -80)
             width: 40,
-            height: 80, // stejná výška
+            height: 80,
             passed: false,
             type: "block"
           });
@@ -420,10 +422,6 @@
       document.getElementById("startScreen").style.display = "none";
       loop();
     });
-
-    // Ladění: zkontroluj, zda jsou obrázky načteny
-    ravenImg.onerror = () => console.log("Chyba: raven.png nenalezen");
-    obstacleImg.onerror = () => console.log("Chyba: obstacle.png nenalezen");
   </script>
 </body>
 </html>
