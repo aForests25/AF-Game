@@ -70,11 +70,6 @@
     let coin = null; // mince v zimním prostředí
     let coinCollected = false; // zda je mince sebraná
 
-    // Proměnné pro skóre
-    let score = 0;
-    let highScore = localStorage.getItem("arcaneForestHighScore") || 0;
-    highScore = parseInt(highScore);
-
     // Přizpůsobení velikosti displeje
     function resizeGame() {
       canvas.width = window.innerWidth;
@@ -136,6 +131,7 @@
 
     // =============== Obstacles ===================
     let frame = 0;
+    let score = 0;
     let gameOver = false;
     let speedMultiplier = 1;
 
@@ -376,18 +372,28 @@
           };
           obstacles.push(newPit);
           pitCounter++;
-          console.log("Vytvořena propast. Počítadlo: " + pitCounter + ", Speciální: " + newPit.special);
         } else {
-          obstacles.push({
-            x: canvas.width,
-            y: ground - 50,
-            width: 40,
-            height: 80,
-            passed: false,
-            type: "block"
-          });
+          // Pokud je zima a skóre je alespoň 15, přidej minci
+          if (winterMode && score >= 15 && Math.random() < 0.2) {
+            obstacles.push({
+              x: canvas.width,
+              y: ground - 100,
+              width: 30,
+              height: 30,
+              type: "coin",
+              passed: false
+            });
+          } else {
+            obstacles.push({
+              x: canvas.width,
+              y: ground - 50,
+              width: 40,
+              height: 80,
+              passed: false,
+              type: "block"
+            });
+          }
           pitCounter = 0; // Resetujeme počítadlo
-          console.log("Vytvořen blok. Počítadlo resetováno na: " + pitCounter);
         }
       }
       obstacles.forEach(obs => {
@@ -435,17 +441,14 @@
             ravenHitboxY + ravenHitboxHeight >= obs.y &&
             !raven.jumping
           ) {
-            console.log("Kolize s propastí. Speciální: " + obs.special);
             // Pokud je to speciální 3. propast
             if (obs.special && !fallingDown) {
-              console.log("Spouštím pád dolů do zimy!");
               fallingDown = true;
               fallSpeed = 5; // začne padat dolů
               pitCounter = 0;
               return;
             } else if (!obs.special) {
               // Jinak zabije hru
-              console.log("Propast zabila hráče.");
               gameOver = true;
               hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
             }
@@ -493,12 +496,6 @@
       ctx.font = "40px Arial Black";
       ctx.textAlign = "center";
       ctx.fillText(score, canvas.width / 2, 60);
-
-      // Vykreslení high score
-      ctx.fillStyle = "#a0e6d2";
-      ctx.font = "20px Arial";
-      ctx.textAlign = "right";
-      ctx.fillText("High Score: " + highScore, canvas.width - 20, 30);
     }
 
     function drawGround() {
@@ -525,12 +522,6 @@
         frame++;
         requestAnimationFrame(loop);
       } else {
-        // Pokud je skóre vyšší než high score, aktualizuj
-        if (score > highScore) {
-          highScore = score;
-          localStorage.setItem("arcaneForestHighScore", highScore);
-        }
-
         ctx.fillStyle = "#ff3366";
         ctx.font = "60px Arial Black";
         ctx.textAlign = "center";
