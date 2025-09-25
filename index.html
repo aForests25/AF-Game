@@ -377,26 +377,14 @@
           obstacles.push(newPit);
           pitCounter++;
         } else {
-          // Pokud je zima a skóre je alespoň 15, přidej minci
-          if (winterMode && score >= 15 && Math.random() < 0.2) {
-            obstacles.push({
-              x: canvas.width,
-              y: ground - 100,
-              width: 30,
-              height: 30,
-              type: "coin",
-              passed: false
-            });
-          } else {
-            obstacles.push({
-              x: canvas.width,
-              y: ground - 50,
-              width: 40,
-              height: 80,
-              passed: false,
-              type: "block"
-            });
-          }
+          obstacles.push({
+            x: canvas.width,
+            y: ground - 50,
+            width: 40,
+            height: 80,
+            passed: false,
+            type: "block"
+          });
           pitCounter = 0; // Resetujeme počítadlo
         }
       }
