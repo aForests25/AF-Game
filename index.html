@@ -66,6 +66,10 @@
     let fallFrame = 0; // počet snímků pádu
     let fallDuration = 30; // 30 snímků = ~0.5 sekundy při 60 FPS
 
+    // Proměnné pro minci
+    let coin = null; // mince v zimním prostředí
+    let coinCollected = false; // zda je mince sebraná
+
     // Přizpůsobení velikosti displeje
     function resizeGame() {
       canvas.width = window.innerWidth;
@@ -79,7 +83,7 @@
         width: 80,
         height: 80,
         gravity: 0.8,
-        lift: -15,
+        lift: -17, // Vyšší skok
         velocity: 0,
         jumping: false
       };
@@ -123,6 +127,7 @@
     const jumpSound = new Audio("jump.wav");
     const pointSound = new Audio("point.wav");
     const hitSound = new Audio("hit.wav");
+    const coinSound = new Audio("coin.wav"); // přidej si soubor coin.wav
 
     // =============== Obstacles ===================
     let frame = 0;
@@ -329,6 +334,11 @@
         if (obs.type === "pit") {
           ctx.fillStyle = (winterMode || fallingDown) ? "#000066" : "#000";
           ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        } else if (obs.type === "coin") {
+          ctx.fillStyle = "#ffcc00";
+          ctx.beginPath();
+          ctx.arc(obs.x + obs.width/2, obs.y + obs.height/2, obs.width/2, 0, Math.PI * 2);
+          ctx.fill();
         } else {
           if (obstacleImg.complete && obstacleImg.naturalWidth !== 0) {
             ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height);
@@ -341,7 +351,13 @@
     }
 
     function updateObstacles() {
-      speedMultiplier = 1 + Math.floor(score / 100) * 0.1;
+      // Dynamická rychlost podle skóre
+      if (score < 10) {
+        speedMultiplier = 1 + score * 0.02; // Každý bod zrychlí o 0.02
+      } else {
+        speedMultiplier = 1 + 10 * 0.02 + (score - 10) * 0.01; // Po 10 bodech zrychlí pomaleji (0.01 za bod)
+      }
+
       if (frame % 120 === 0) {
         let createPit = Math.random() < 0.5;
         if (createPit) {
@@ -357,14 +373,26 @@
           obstacles.push(newPit);
           pitCounter++;
         } else {
-          obstacles.push({
-            x: canvas.width,
-            y: ground - 50,
-            width: 40,
-            height: 80,
-            passed: false,
-            type: "block"
-          });
+          // Pokud je zima a skóre je alespoň 15, přidej minci
+          if (winterMode && score >= 15 && Math.random() < 0.2) {
+            obstacles.push({
+              x: canvas.width,
+              y: ground - 100,
+              width: 30,
+              height: 30,
+              type: "coin",
+              passed: false
+            });
+          } else {
+            obstacles.push({
+              x: canvas.width,
+              y: ground - 50,
+              width: 40,
+              height: 80,
+              passed: false,
+              type: "block"
+            });
+          }
           pitCounter = 0; // Resetujeme počítadlo
         }
       }
@@ -419,10 +447,27 @@
               hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
             }
           }
+        } else if (obs.type === "coin") {
+          // Kolize s mincí
+          let dx = (raven.x + raven.width/2) - (obs.x + obs.width/2);
+          let dy = (raven.y + raven.height/2) - (obs.y + obs.height/2);
+          let distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < raven.width/2 + obs.width/2) {
+            coinSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+            winterMode = false; // Vrátíme se do původního prostředí
+            obstacles = []; // Odstraníme překážky
+            coin = null; // Resetujeme minci
+            return;
+          }
         } else {
+          // MENŠÍ HITBOX PRO PŘEKÁŽKY
+          let hitboxWidth = obs.width * 0.6; // 60 % šířky
+          let hitboxX = obs.x + (obs.width - hitboxWidth) / 2; // střed
+
           if (
-            raven.x < obs.x + obs.width &&
-            raven.x + raven.width > obs.x &&
+            raven.x + raven.width > hitboxX &&
+            raven.x < hitboxX + hitboxWidth &&
             raven.y < obs.y + obs.height &&
             raven.y + raven.height > obs.y
           ) {
@@ -432,8 +477,10 @@
         }
         if (!obs.passed && obs.x + obs.width < raven.x) {
           obs.passed = true;
-          score++;
-          pointSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+          if (obs.type !== "coin") {
+            score++;
+            pointSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+          }
         }
       }
     }
@@ -490,6 +537,8 @@
       pitCounter = 0;
       fallingDown = false;
       fallFrame = 0;
+      coin = null;
+      coinCollected = false;
       raven.y = ground - raven.height;
       raven.velocity = 0;
       loop();
