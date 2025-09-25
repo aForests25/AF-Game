@@ -62,6 +62,9 @@
     let winterMode = false;
     let pitCounter = 0; // počet po sobě jdoucích propastí
     let pitSequence = 0; // počet propastí v řadě
+    let fallingDown = false; // zda právě padá dolů
+    let fallSpeed = 0; // rychlost pádu dolů
+    let specialPit = null; // ID 3. propasti, která otevírá cestu dolů
 
     // Přizpůsobení velikosti displeje
     function resizeGame() {
@@ -155,7 +158,7 @@
 
     // =============== Controls ===================
     function jump() {
-      if (!gameOver && !raven.jumping) {
+      if (!gameOver && !raven.jumping && !fallingDown) {
         raven.velocity = raven.lift;
         raven.jumping = true;
         jumpSound.play().catch(e => console.log("Zvuk nelze přehrát"));
@@ -342,15 +345,20 @@
       if (frame % 120 === 0) {
         let createPit = Math.random() < 0.5;
         if (createPit) {
-          obstacles.push({
+          let newPit = {
             x: canvas.width,
             y: ground,
             width: 80 + Math.random() * 40,
             height: 10,
             type: "pit",
             passed: false
-          });
+          };
+          obstacles.push(newPit);
           pitCounter++;
+          // Pokud je to 3. propast v řadě
+          if (pitCounter === 3) {
+            specialPit = newPit;
+          }
         } else {
           obstacles.push({
             x: canvas.width,
@@ -362,13 +370,6 @@
           });
           pitCounter = 0;
         }
-
-        // Pokud jsou 3 propasti za sebou
-        if (pitCounter >= 3) {
-          winterMode = true;
-          pitCounter = 0; // resetujeme
-          // Můžeme přidat zvuk nebo efekt
-        }
       }
       obstacles.forEach(obs => {
         obs.x -= baseSpeed * speedMultiplier;
@@ -376,12 +377,26 @@
     }
 
     function updateRaven() {
-      raven.velocity += raven.gravity;
-      raven.y += raven.velocity;
-      if (raven.y + raven.height >= ground) {
-        raven.y = ground - raven.height;
-        raven.velocity = 0;
-        raven.jumping = false;
+      if (fallingDown) {
+        raven.y += fallSpeed;
+        fallSpeed += 0.5;
+        // Pokud raven padá dostatečně dolů
+        if (raven.y > canvas.height) {
+          winterMode = true;
+          fallingDown = false;
+          pitCounter = 0;
+          specialPit = null;
+          // Reset pozice ravenu
+          raven.y = ground - 80;
+        }
+      } else {
+        raven.velocity += raven.gravity;
+        raven.y += raven.velocity;
+        if (raven.y + raven.height >= ground) {
+          raven.y = ground - raven.height;
+          raven.velocity = 0;
+          raven.jumping = false;
+        }
       }
     }
 
@@ -394,8 +409,18 @@
             raven.y + raven.height >= obs.y &&
             !raven.jumping
           ) {
-            gameOver = true;
-            hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+            // Pokud je to speciální 3. propast
+            if (obs === specialPit && !fallingDown) {
+              fallingDown = true;
+              fallSpeed = 5; // začne padat dolů
+              specialPit = null;
+              pitCounter = 0;
+              return;
+            } else if (obs !== specialPit) {
+              // Jinak zabije hru
+              gameOver = true;
+              hitSound.play().catch(e => console.log("Zvuk nelze přehrát"));
+            }
           }
         } else {
           if (
@@ -466,6 +491,8 @@
       gameOver = false;
       winterMode = false;
       pitCounter = 0;
+      fallingDown = false;
+      specialPit = null;
       raven.y = ground - raven.height;
       raven.velocity = 0;
       loop();
